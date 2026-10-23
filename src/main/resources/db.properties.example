@@ -1,0 +1,9 @@
+# Database settings. Copy this file to "db.properties" (same folder) and edit it.
+# db.properties is listed in .gitignore so your password is never committed.
+# The environment variables DB_URL, DB_USER and DB_PASSWORD override these values.
+
+# useSSL=false + allowPublicKeyRetrieval=true: needed for a local MySQL 8 without TLS
+# (caching_sha2_password). Remove them for a remote server.
+db.url=jdbc:mysql://localhost:3306/gestion_commandes?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+db.user=root
+db.password=CHANGE_ME
