@@ -1,0 +1,747 @@
+% =============================================================================
+% Rapport de l'atelier JEE - Application web de gestion de commandes
+% Compilation : pdfLaTeX (compilateur par defaut d'Overleaf), 2 passes ou latexmk.
+% Les captures sont attendues dans le dossier figures/ au format PNG (voir la liste
+% au debut de ce fichier). Une capture manquante est remplacee par un cadre vide :
+% le rapport compile quand meme.
+% =============================================================================
+\documentclass[11pt,a4paper]{report}
+
+% ---------------------------------------------------------------- informations
+\newcommand{\titre}{Application web de gestion de commandes\\ bas\'ee sur MVC et les standards JEE}
+\newcommand{\auteur}{Sara OUHADDOU}          % <-- verifier l'orthographe de ton nom
+\newcommand{\encadrant}{Pr.\ Lotfi ELAACHAK}
+\newcommand{\annee}{2026--2027}
+\newcommand{\depot}{https://github.com/ouhaddousara/jee-order-management-mvc}
+
+% ---------------------------------------------------------------- packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.multipart,calc}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+\usepackage{xurl}
+
+\definecolor{ink}{HTML}{12201E}
+\definecolor{teal}{HTML}{0F6E66}
+\definecolor{saffron}{HTML}{E9A820}
+\definecolor{codebg}{HTML}{F6F8F7}
+\definecolor{codekw}{HTML}{0A524C}
+\definecolor{codecm}{HTML}{5F6F6C}
+
+\captionsetup{font=small,labelfont=bf,labelsep=period}
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.15}
+
+% ---------------------------------------------------------------- code listings
+\lstdefinestyle{code}{
+    basicstyle=\ttfamily\footnotesize,
+    backgroundcolor=\color{codebg},
+    keywordstyle=\color{codekw}\bfseries,
+    commentstyle=\color{codecm}\itshape,
+    stringstyle=\color{teal},
+    numbers=left, numberstyle=\tiny\color{codecm}, numbersep=6pt,
+    frame=single, rulecolor=\color{black!20},
+    breaklines=true, breakatwhitespace=false, columns=fullflexible,
+    keepspaces=true, showstringspaces=false, tabsize=4,
+    xleftmargin=14pt, framexleftmargin=14pt,
+    aboveskip=8pt, belowskip=4pt, captionpos=b
+}
+\lstset{style=code}
+\lstdefinelanguage{JavaEE}[]{Java}{morekeywords={record,var}}
+
+% ---------------------------------------------------------------- figure helper
+% \fig[largeur]{nom-sans-extension}{legende}{etiquette}
+\newcommand{\fig}[4][0.92]{%
+  \begin{figure}[H]\centering
+    \IfFileExists{figures/#2.png}%
+      {\includegraphics[width=#1\textwidth,height=0.5\textheight,keepaspectratio]{figures/#2.png}}%
+      {\fbox{\parbox{0.8\textwidth}{\centering\vspace{1.8cm}\texttt{figures/#2.png} \textit{introuvable}\vspace{1.8cm}}}}%
+    \caption{#3}\label{#4}
+  \end{figure}}
+
+% ---------------------------------------------------------------- en-tetes
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
+\fancyhead[L]{\small\textit{\leftmark}}
+\fancyhead[R]{\small\textit{Atelier JEE}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+\begin{document}
+
+% =============================================================================
+% PAGE DE GARDE
+% =============================================================================
+\begin{titlepage}
+\centering
+{\small Universit\'e Abdelmalek Essa\^adi\\
+Facult\'e des Sciences et Techniques de Tanger\\
+D\'epartement G\'enie Informatique\\
+Cycle Ing\'enieur --- Logiciels et Syst\`emes Intelligents (LSI)\par}
+\vspace{2.2cm}
+{\color{teal}\rule{\textwidth}{1.2pt}}\par\vspace{0.6cm}
+{\large Module JEE --- Compte rendu d'atelier\par}
+\vspace{0.6cm}
+{\Huge\bfseries\color{ink}\titre\par}
+\vspace{0.6cm}
+{\color{saffron}\rule{0.25\textwidth}{2.5pt}}\par
+\vspace{0.8cm}
+{\large Servlet, JSP, JSTL, JavaBean, CDI et JDBC\\ sur Tomcat 9 et MySQL\par}
+\vfill
+\begin{tabular}{rl}
+\textbf{R\'ealis\'e par :} & \auteur\\[4pt]
+\textbf{Encadrant :} & \encadrant\\[4pt]
+\textbf{Ann\'ee universitaire :} & \annee\\[4pt]
+\textbf{D\'ep\^ot du code :} & \small\url{\depot}
+\end{tabular}
+\vspace{1.2cm}
+\end{titlepage}
+
+% =============================================================================
+\chapter*{R\'esum\'e}
+\addcontentsline{toc}{chapter}{R\'esum\'e}
+Ce rapport pr\'esente la r\'ealisation de l'atelier \og Application web bas\'ee sur MVC et standards JEE \fg{}. L'objectif est de ma\^itriser les standards \emph{Servlet}, \emph{JSP} et \emph{JavaBean} en construisant une application qui g\`ere les commandes de plusieurs clients.
+
+Le travail suit les cinq \'etapes du sujet : mod\'elisation (diagramme de classes), traduction en base MySQL, cr\'ation du projet Maven sous Eclipse, couche de persistance (entit\'es, DAO, interfaces de service) puis couche web (servlets et pages JSP pour les espaces client, produit et commande). Au-del\`a du sujet, l'application prot\`ege la coh\'erence du stock par des transactions, v\'erifie les saisies, se prot\`ege contre les attaques CSRF et XSS et propose une interface responsive.
+
+\textbf{Mots-cl\'es :} JEE, Servlet, JSP, JSTL, MVC, JDBC, DAO, CDI, MySQL, Tomcat, Maven.
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% =============================================================================
+\chapter{Introduction}
+% =============================================================================
+\section{Contexte et objectif}
+L'atelier demande de d\'evelopper une application web de gestion de commandes en respectant le patron de conception MVC. Il s'agit de manipuler les briques de base de la plateforme Java EE, sans framework de haut niveau : servlets pour le contr\^ole, JSP pour l'affichage, JavaBeans pour le mod\`ele, JDBC pour l'acc\`es aux donn\'ees.
+
+L'application permet de :
+\begin{itemize}
+  \item g\'erer des \textbf{clients} et des \textbf{produits} (cr\'eation, consultation, modification, suppression) ;
+  \item cr\'eer des \textbf{commandes} contenant plusieurs lignes, les modifier tant qu'elles sont en attente, et suivre leur cycle de vie jusqu'\`a l'exp\'edition ;
+  \item garder un \textbf{stock} exact malgr\'e les commandes, les modifications et les annulations.
+\end{itemize}
+
+\section{Outils et versions}
+\begin{table}[H]
+\centering
+\caption{Outils utilis\'es}\label{tab:outils}
+\begin{tabularx}{\textwidth}{@{}lXl@{}}
+\toprule
+\textbf{Outil} & \textbf{R\^ole} & \textbf{Version}\\
+\midrule
+JDK (Eclipse Adoptium) & Compilation et ex\'ecution & 17\\
+Eclipse IDE for Enterprise Java and Web Developers & Environnement de d\'eveloppement & 2026\\
+Apache Maven & Gestion des d\'ependances et du build & 3.9\\
+Apache Tomcat & Conteneur de servlets (Servlet 4.0, JSP 2.3) & 9.0.123\\
+MySQL Server & Base de donn\'ees relationnelle & 8.x\\
+Weld (CDI) & Injection de d\'ependances (\texttt{@Inject}, \texttt{@ApplicationScoped}) & 3.1.9\\
+Git et GitHub & Gestion de versions & --\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Tomcat 9 est impos\'e : Tomcat 10 et suivants utilisent l'espace de noms \texttt{jakarta.*} et ne sont pas compatibles avec les d\'ependances \texttt{javax.*} du sujet.
+
+\section{Note sur le terme \og MVC 1 \fg{}}
+Le sujet parle de \og MVC 1 \fg{}. Dans la litt\'erature, le \emph{Model 1} d\'esigne une architecture o\`u les pages JSP re\c coivent elles-m\^emes les requ\^etes et appellent le mod\`ele. Dans cet atelier, nous avons plac\'e des \textbf{servlets} comme contr\^oleurs devant les JSP (architecture souvent appel\'ee \emph{Model 2}), car c'est ce qui correspond au r\^ole demand\'e pour les servlets et ce qui permet de s\'eparer vraiment la logique de la pr\'esentation. Les JSP ne contiennent aucun code Java : le fichier \texttt{web.xml} interdit les scriptlets.
+
+\section{Organisation du rapport}
+Les chapitres suivent les \'etapes du sujet. Le chapitre~\ref{chap:tests} pr\'esente la validation, le chapitre~\ref{chap:git} la gestion du code, et le dernier chapitre les limites de la solution.
+
+% =============================================================================
+\chapter{\'Etape 1 --- Conception du mod\`ele}
+% =============================================================================
+\section{Diagramme de classes}
+Le domaine comporte les quatre classes demand\'ees (\texttt{Client}, \texttt{Commande}, \texttt{Produit}, \texttt{LigneDeCommande}) auxquelles nous avons ajout\'e une \'enum\'eration \texttt{StatutCommande}. Le statut est un ensemble ferm\'e de valeurs ; l'exprimer en type \'evite les fautes de frappe et permet de centraliser les r\`egles de transition.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    font=\small,
+    node distance=1.6cm and 3.6cm,
+    class/.style={rectangle split, rectangle split parts=2, draw, thick, fill=white,
+                  text width=5.4cm, inner xsep=5pt, inner ysep=4pt, align=left},
+    enum/.style={rectangle split, rectangle split parts=2, draw, thick, fill=black!6,
+                 text width=5.4cm, inner xsep=5pt, inner ysep=4pt, align=left},
+    assoc/.style={thick},
+    mult/.style={font=\footnotesize, inner sep=1.5pt},
+    role/.style={font=\footnotesize\itshape, fill=white, inner sep=1.5pt}
+]
+
+% ---------------------------------------------------------------- classes
+
+\node[class] (commande) {
+    \centerline{\textbf{Commande}}
+    \nodepart{second}
+    $-$ id : Long \\
+    $-$ dateCommande : LocalDate \\
+    $-$ statut : StatutCommande \\
+    $+$ getTotal() : BigDecimal \\
+    $+$ ajouterLigne(p : Produit, q : int)
+};
+
+\node[class, left=of commande] (client) {
+    \centerline{\textbf{Client}}
+    \nodepart{second}
+    $-$ id : Long \\
+    $-$ nom : String \\
+    $-$ prenom : String \\
+    $-$ email : String \{unique\} \\
+    $-$ telephone : String \\
+    $-$ adresse : String \\
+    $+$ getNomComplet() : String
+};
+
+
+\node[class, below=of commande] (ligne) {
+    \centerline{\textbf{LigneDeCommande}}
+    \nodepart{second}
+    $-$ id : Long \\
+    $-$ quantite : int \\
+    $-$ prixUnitaire : BigDecimal \\
+    $+$ getSousTotal() : BigDecimal
+};
+
+\node[class, left=of ligne] (produit) {
+    \centerline{\textbf{Produit}}
+    \nodepart{second}
+    $-$ id : Long \\
+    $-$ designation : String \\
+    $-$ description : String \\
+    $-$ prix : BigDecimal \\
+    $-$ stock : int
+};
+
+\node[enum, above=1.2cm of commande] (statut) {
+    \centerline{$\ll$enumeration$\gg$}
+    \centerline{\textbf{StatutCommande}}
+    \nodepart{second}
+    EN\_ATTENTE \\ VALIDEE \\ EXPEDIEE \\ ANNULEE
+};
+
+% ---------------------------------------------------------------- relations
+% Client 1 --- 0..* Commande
+\draw[assoc] (client.east) -- node[role, above] {passe} (commande.west);
+\node[mult, below right=1pt and 1pt] at (client.east)   {1};
+\node[mult, below left=1pt and 1pt]  at (commande.west) {0..*};
+
+% Commande <>--- 1..* LigneDeCommande (composition)
+\draw[assoc, {Diamond[length=9pt,width=7pt,open=false,fill=black]}-] (commande.south) --
+    node[role, right=3pt] {contient} (ligne.north);
+\node[mult, below right=1pt and 3pt] at (commande.south) {1};
+\node[mult, above right=1pt and 3pt] at (ligne.north)    {1..*};
+
+% LigneDeCommande 0..* --- 1 Produit
+\draw[assoc] (ligne.west) -- node[role, above] {concerne} (produit.east);
+\node[mult, above left=1pt and 1pt]  at (ligne.west)   {0..*};
+\node[mult, above right=1pt and 1pt] at (produit.east) {1};
+
+% Commande uses StatutCommande (dependency)
+\draw[-{Stealth[length=7pt]}, dashed, thick] (commande.north) -- node[role, right=3pt] {utilise} (statut.south);
+
+\end{tikzpicture}
+}
+\caption{Diagramme de classes du domaine}\label{fig:classes}
+\end{figure}
+
+\section{D\'ecisions de conception}
+\begin{itemize}
+  \item \textbf{\texttt{LigneDeCommande} est une classe \`a part enti\`ere}, et non une simple liste de produits. Une commande contient un produit \emph{avec une quantit\'e et un prix}. La relation entre \texttt{Commande} et \texttt{Produit} est donc une association plusieurs-\`a-plusieurs port\'ee par cette classe.
+  \item \textbf{Le prix est copi\'e dans la ligne} (\texttt{prixUnitaire}) au moment de la commande. Si le prix d'un produit change plus tard, l'historique des commandes reste exact.
+  \item \textbf{La composition} entre \texttt{Commande} et \texttt{LigneDeCommande} traduit que les lignes n'ont pas de sens sans leur commande.
+  \item \textbf{Les montants sont des \texttt{BigDecimal}} : les types \texttt{double} ou \texttt{float} produisent des erreurs d'arrondi inacceptables pour de l'argent.
+  \item \textbf{Les totaux sont calcul\'es}, pas stock\'es : \texttt{getSousTotal()} et \texttt{getTotal()} d\'erivent des lignes, ce qui supprime tout risque d'incoh\'erence.
+\end{itemize}
+
+\section{Cycle de vie d'une commande}
+Une commande passe par quatre statuts. Les transitions autoris\'ees sont port\'ees par l'\'enum\'eration elle-m\^eme (m\'ethode \texttt{peutPasserA}), et non par les servlets, pour que la r\`egle existe \`a un seul endroit.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\small, node distance=2.4cm,
+    state/.style={rectangle, rounded corners=6pt, draw=ink, thick, fill=white,
+                  minimum width=2.6cm, minimum height=0.95cm, align=center},
+    final/.style={state, fill=black!8},
+    tr/.style={-{Stealth[length=6pt]}, thick}
+]
+\node[state] (att) {En attente};
+\node[state, right=of att] (val) {Valid\'ee};
+\node[final, right=of val] (exp) {Exp\'ediée};
+\node[final, below=1.4cm of val] (ann) {Annul\'ee};
+\draw[tr] (att) -- node[above, font=\footnotesize] {valider} (val);
+\draw[tr] (val) -- node[above, font=\footnotesize] {exp\'edier} (exp);
+\draw[tr] (att) -- node[left, font=\footnotesize, xshift=-2pt] {annuler} (ann);
+\draw[tr] (val) -- node[right, font=\footnotesize] {annuler} (ann);
+\end{tikzpicture}
+\caption{Transitions autoris\'ees entre statuts (les \'etats gris sont terminaux)}\label{fig:etats}
+\end{figure}
+
+Les r\`egles m\'etier associ\'ees sont :
+\begin{enumerate}
+  \item le stock d'un produit est \textbf{r\'eserv\'e} d\`es qu'une ligne est cr\'e\'ee et \textbf{restitu\'e} si la commande est annul\'ee ou supprim\'ee ;
+  \item les lignes ne sont modifiables que tant que la commande est \emph{En attente}, et une commande ne peut pas perdre sa derni\`ere ligne ;
+  \item une commande ne peut \^etre supprim\'ee que si elle est \emph{En attente} ou \emph{Annul\'ee} ;
+  \item un client qui a des commandes ne peut pas \^etre supprim\'e, ni un produit qui figure dans une commande.
+\end{enumerate}
+
+% =============================================================================
+\chapter{\'Etape 2 --- Base de donn\'ees MySQL}
+% =============================================================================
+\section{Du diagramme au sch\'ema relationnel}
+Chaque classe devient une table, chaque association une cl\'e \'etrang\`ere (tableau~\ref{tab:traduction}).
+
+\begin{table}[H]
+\centering
+\caption{Traduction du mod\`ele objet vers le mod\`ele relationnel}\label{tab:traduction}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{\'El\'ement du diagramme} & \textbf{Traduction}\\
+\midrule
+Classe \texttt{Client}, \texttt{Produit} & Tables \texttt{client}, \texttt{produit}\\
+Association \texttt{Client} 1 --- 0..* \texttt{Commande} & Cl\'e \'etrang\`ere \texttt{commande.client\_id}, \texttt{ON DELETE RESTRICT}\\
+Composition \texttt{Commande} 1 --- 1..* \texttt{LigneDeCommande} & Table \texttt{ligne\_commande}, cl\'e \'etrang\`ere \texttt{commande\_id}, \texttt{ON DELETE CASCADE}\\
+Association \texttt{LigneDeCommande} 0..* --- 1 \texttt{Produit} & Cl\'e \'etrang\`ere \texttt{produit\_id}, \texttt{ON DELETE RESTRICT}\\
+\'Enum\'eration \texttt{StatutCommande} & Colonne \texttt{VARCHAR} avec contrainte \texttt{CHECK} sur les quatre valeurs\\
+\texttt{email} unique & Contrainte \texttt{UNIQUE}\\
+Une ligne par produit et par commande & Contrainte \texttt{UNIQUE (commande\_id, produit\_id)}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    tab/.style={rectangle split, rectangle split parts=2, draw=ink, thick, fill=white,
+                text width=4.3cm, inner xsep=5pt, inner ysep=3pt, align=left},
+    rel/.style={thick, -{Stealth[length=6pt]}}
+]
+\node[tab] (client) {\centerline{\textbf{client}} \nodepart{second}
+  \underline{id} BIGINT PK\\ nom, prenom VARCHAR(80)\\ email VARCHAR(150) \textit{unique}\\ telephone, adresse};
+\node[tab, right=2.4cm of client] (commande) {\centerline{\textbf{commande}} \nodepart{second}
+  \underline{id} BIGINT PK\\ date\_commande DATE\\ statut VARCHAR(20) \textit{check}\\ client\_id BIGINT FK};
+\node[tab, below=1.3cm of commande] (ligne) {\centerline{\textbf{ligne\_commande}} \nodepart{second}
+  \underline{id} BIGINT PK\\ commande\_id BIGINT FK\\ produit\_id BIGINT FK\\ quantite INT $>0$\\ prix\_unitaire DECIMAL(10,2)};
+\node[tab, left=2.4cm of ligne] (produit) {\centerline{\textbf{produit}} \nodepart{second}
+  \underline{id} BIGINT PK\\ designation VARCHAR(150)\\ description VARCHAR(500)\\ prix DECIMAL(10,2) $\geq 0$\\ stock INT $\geq 0$};
+\draw[rel] (commande.west) -- node[above, font=\footnotesize] {client\_id} (client.east);
+\draw[rel] (ligne.north) -- node[right, font=\footnotesize] {commande\_id} (commande.south);
+\draw[rel] (ligne.west) -- node[above, font=\footnotesize] {produit\_id} (produit.east);
+\end{tikzpicture}
+\caption{Sch\'ema relationnel (les fl\`eches vont de la cl\'e \'etrang\`ere vers la table r\'ef\'erenc\'ee)}\label{fig:schema}
+\end{figure}
+
+\section{Contraintes port\'ees par la base}
+Les r\`egles essentielles sont aussi d\'eclar\'ees dans la base, pas seulement dans le code Java : si une autre application ou une requ\^ete manuelle \'ecrit dans la base, les donn\'ees restent coh\'erentes. Le code suivant montre les tables les plus riches en contraintes.
+
+\begin{lstlisting}[language=SQL,caption={Extrait de \texttt{db/schema.sql} : commandes et lignes},label={lst:schema}]
+CREATE TABLE commande (
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    date_commande  DATE        NOT NULL DEFAULT (CURRENT_DATE),
+    statut         VARCHAR(20) NOT NULL DEFAULT 'EN_ATTENTE',
+    client_id      BIGINT      NOT NULL,
+    CONSTRAINT fk_commande_client
+        FOREIGN KEY (client_id) REFERENCES client (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT ck_commande_statut
+        CHECK (statut IN ('EN_ATTENTE','VALIDEE','EXPEDIEE','ANNULEE'))
+) ENGINE = InnoDB;
+
+CREATE TABLE ligne_commande (
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    commande_id    BIGINT        NOT NULL,
+    produit_id     BIGINT        NOT NULL,
+    quantite       INT           NOT NULL,
+    prix_unitaire  DECIMAL(10,2) NOT NULL,
+    CONSTRAINT fk_ligne_commande FOREIGN KEY (commande_id)
+        REFERENCES commande (id) ON DELETE CASCADE,
+    CONSTRAINT fk_ligne_produit FOREIGN KEY (produit_id)
+        REFERENCES produit (id) ON DELETE RESTRICT,
+    CONSTRAINT uq_ligne_commande_produit UNIQUE (commande_id, produit_id),
+    CONSTRAINT ck_ligne_quantite CHECK (quantite > 0)
+) ENGINE = InnoDB;
+\end{lstlisting}
+
+Les choix \texttt{RESTRICT} et \texttt{CASCADE} suivent la nature des liens : un client ou un produit d\'ej\`a utilis\'e ne doit pas dispara\^itre silencieusement, alors que les lignes d'une commande supprim\'ee n'ont plus de raison d'exister. Les contraintes \texttt{CHECK} ne sont appliqu\'ees qu'\`a partir de MySQL 8.0.16 ; avant cette version elles sont ignor\'ees sans erreur, d'o\`u la v\'erification ci-dessous.
+
+\section{Mise en place et v\'erification}
+Le script est ex\'ecut\'e avec \texttt{mysql -u root -p < db/schema.sql}. Les figures~\ref{fig:tables} \`a~\ref{fig:donnees} montrent les tables cr\'e\'ees, leur structure et les donn\'ees d'exemple.
+
+\fig{07-schema-tables}{Tables cr\'e\'ees dans la base \texttt{gestion\_commandes}}{fig:tables}
+\fig{08-schema-describe}{Structure des tables \texttt{commande} et \texttt{ligne\_commande}}{fig:describe}
+\fig{09-donnees}{Donn\'ees d'exemple ins\'er\'ees}{fig:donnees}
+
+Pour s'assurer que les contraintes \texttt{CHECK} sont bien actives, nous avons tent\'e d'ins\'erer un produit au stock n\'egatif. La base refuse l'insertion (figure~\ref{fig:check}).
+
+\fig{10-check-test}{Une contrainte \texttt{CHECK} refuse un stock n\'egatif (erreur 3819)}{fig:check}
+
+% =============================================================================
+\chapter{\'Etape 3 --- Projet Web dynamique et Maven}
+% =============================================================================
+\section{Environnement}
+La figure~\ref{fig:versions} r\'ecapitule les versions install\'ees, et la figure~\ref{fig:jre} montre le JDK~17 configur\'e dans Eclipse. Une erreur rencontr\'ee au d\'emarrage : Eclipse signalait un niveau de conformit\'e du compilateur trop \'elev\'e. Fixer explicitement le niveau \`a 17, \`a la fois dans Eclipse et dans le \texttt{pom.xml} (\texttt{maven.compiler.release}), garantit que le projet compile de la m\^eme mani\`ere partout.
+
+\fig{01-versions}{Versions des outils install\'es}{fig:versions}
+\fig[0.8]{02-eclipse-jre}{JDK 17 configur\'e dans Eclipse}{fig:jre}
+
+\section{Cr\'eation et conversion du projet}
+Le projet a \'et\'e cr\'e\'e comme \emph{Dynamic Web Project} (module web 4.0), puis converti en projet Maven (\emph{Configure $\rightarrow$ Convert to Maven Project}). Le \texttt{pom.xml} a ensuite \'et\'e remplac\'e, suivi d'un \emph{Maven $\rightarrow$ Update Project}. Le tableau~\ref{tab:deps} liste les d\'ependances et la raison de leur port\'ee.
+
+\begin{table}[H]
+\centering
+\caption{D\'ependances Maven}\label{tab:deps}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{D\'ependance} & \textbf{Port\'ee} & \textbf{Raison}\\
+\midrule
+\texttt{javax.servlet-api} 4.0.1 & provided & API Servlet, fournie par Tomcat\\
+\texttt{javax.servlet.jsp-api} 2.3.3 & provided & API JSP, fournie par Tomcat\\
+\texttt{jstl} 1.2 & compile & Biblioth\`eque de balises utilis\'ee dans les JSP\\
+\texttt{mysql-connector-j} 8.0.33 & compile & Pilote JDBC pour MySQL\\
+\texttt{weld-servlet-shaded} 3.1.9 & compile & Impl\'ementation CDI embarqu\'ee dans l'application\\
+\texttt{javax.inject} 1 & provided & Annotation \texttt{@Inject}\\
+\texttt{jakarta.enterprise.cdi-api} 2.0.2 & provided & Annotation \texttt{@ApplicationScoped}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+La port\'ee \texttt{provided} indique que Tomcat fournit d\'ej\`a la biblioth\`eque \`a l'ex\'ecution : l'embarquer dans le WAR cr\'eerait des conflits de versions. Tomcat ne fournit pas CDI, d'o\`u l'ajout de Weld. La figure~\ref{fig:mavendeps} montre que les d\'ependances ont bien \'et\'e r\'esolues (elles apparaissent sous \emph{Java Resources $\rightarrow$ Libraries}).
+
+\fig[0.6]{04-maven-deps}{D\'ependances Maven r\'esolues dans Eclipse}{fig:mavendeps}
+
+% =============================================================================
+\chapter{\'Etape 4 --- Couche de persistance}
+% =============================================================================
+\section{Organisation en paquets}
+\begin{table}[H]
+\centering
+\caption{Paquets de la couche persistance}\label{tab:paquets}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Paquet} & \textbf{Contenu}\\
+\midrule
+\texttt{ma.fstt.entities} & JavaBeans du mod\`ele : \texttt{Client}, \texttt{Produit}, \texttt{Commande}, \texttt{LigneDeCommande}, \texttt{StatutCommande}\\
+\texttt{ma.fstt.service} & Interfaces \texttt{IDao<T>}, \texttt{IClientDao}, \texttt{IProduitDao}, \texttt{ICommandeDao}, \texttt{ILigneCommandeDao} et exceptions m\'etier\\
+\texttt{ma.fstt.dao} & Impl\'ementations JDBC, connexion et utilitaires transactionnels\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Les servlets ne connaissent que les \textbf{interfaces} du paquet \texttt{service}. Les classes DAO sont inject\'ees par CDI : on peut remplacer l'acc\`es JDBC par un autre m\'ecanisme sans modifier les contr\^oleurs, ni tester un contr\^oleur avec une fausse impl\'ementation.
+
+\section{Gestion des connexions}
+La classe \texttt{DBConnection}, de port\'ee \texttt{@ApplicationScoped}, lit sa configuration dans \texttt{db.properties} (ignor\'e par Git, un mod\`ele est fourni) ou dans des variables d'environnement. Le mot de passe n'est donc jamais dans le d\'ep\^ot.
+
+\section{Transactions}
+Une commande touche plusieurs tables (en-t\^ete, lignes, stock). Toutes ces \'ecritures doivent r\'eussir ensemble ou \'echouer ensemble. Un utilitaire centralise cette logique pour \'eviter de r\'ep\'eter les blocs \texttt{try/catch/rollback} dans chaque m\'ethode.
+
+\begin{lstlisting}[language=JavaEE,caption={Ex\'ecution d'un travail dans une transaction (\texttt{Jdbc.write})},label={lst:tx}]
+static <T> T write(DBConnection db, String action, SqlWork<T> work) {
+    try (Connection c = db.getConnection()) {
+        c.setAutoCommit(false);
+        try {
+            T result = work.run(c);
+            c.commit();
+            return result;
+        } catch (SQLException | RuntimeException e) {
+            rollbackQuietly(c, e);   // never leave a half-written order
+            throw e;
+        }
+    } catch (SQLException e) {
+        throw translate(action, e);
+    }
+}
+\end{lstlisting}
+
+\section{Coh\'erence du stock}
+Le risque classique est le suivant : deux clients commandent la derni\`ere unit\'e en m\^eme temps. Si le code lit le stock, v\'erifie puis \'ecrit, les deux v\'erifications peuvent r\'eussir. La solution retenue d\'el\`egue le contr\^ole \`a la base, dans la m\^eme instruction que la modification :
+
+\begin{lstlisting}[language=JavaEE,caption={R\'eservation atomique du stock},label={lst:stock}]
+static void adjustStock(Connection c, long produitId, int delta) throws SQLException {
+    String sql = "UPDATE produit SET stock = stock + ? WHERE id = ? AND stock + ? >= 0";
+    try (PreparedStatement ps = c.prepareStatement(sql)) {
+        ps.setInt(1, delta);
+        ps.setLong(2, produitId);
+        ps.setInt(3, delta);
+        if (ps.executeUpdate() == 0) {
+            throw new InsufficientStockException(describeShortage(c, produitId));
+        }
+    }
+}
+\end{lstlisting}
+
+Si aucune ligne n'est modifi\'ee, le stock \'etait insuffisant : le message d'erreur nomme le produit et le stock r\'eellement disponible. Deux autres protections compl\`etent ce m\'ecanisme :
+\begin{itemize}
+  \item les lignes d'une commande sont trait\'ees \textbf{tri\'ees par identifiant de produit}, de sorte que deux commandes simultan\'ees verrouillent les produits dans le m\^eme ordre et ne peuvent pas se bloquer mutuellement (interblocage) ;
+  \item l'en-t\^ete de la commande est verrouill\'e (\texttt{SELECT \dots{} FOR UPDATE}) avant toute modification de ses lignes ou de son statut.
+\end{itemize}
+
+Le \textbf{prix de la ligne} est lu dans la base au moment de l'ajout : la valeur envoy\'ee par le navigateur est ignor\'ee, ce qui emp\^eche de commander \`a un prix falsifi\'e.
+
+\section{R\`egle de transition de statut}
+\begin{lstlisting}[language=JavaEE,caption={Transitions autoris\'ees (\texttt{StatutCommande})},label={lst:statut}]
+public boolean peutPasserA(StatutCommande cible) {
+    switch (this) {
+        case EN_ATTENTE:
+            return cible == VALIDEE || cible == ANNULEE;
+        case VALIDEE:
+            return cible == EXPEDIEE || cible == ANNULEE;
+        default:
+            return false; // EXPEDIEE and ANNULEE are terminal
+    }
+}
+\end{lstlisting}
+
+\section{Traduction des erreurs de la base}
+Les codes d'erreur MySQL sont convertis en exceptions m\'etier avec un message lisible pour l'utilisateur (tableau~\ref{tab:erreurs}). L'interface n'affiche donc jamais une trace technique.
+
+\begin{table}[H]
+\centering
+\caption{Erreurs de la base traduites en messages utilisateur}\label{tab:erreurs}
+\begin{tabularx}{\textwidth}{@{}rlX@{}}
+\toprule
+\textbf{Code} & \textbf{Cause} & \textbf{Exception et sens}\\
+\midrule
+1062 & Valeur dupliqu\'ee & \texttt{IntegrityViolationException} : e-mail d\'ej\`a utilis\'e\\
+1451 & Ligne r\'ef\'erenc\'ee & \texttt{IntegrityViolationException} : suppression impossible, donn\'ees encore utilis\'ees\\
+1452 & R\'ef\'erence absente & \texttt{IntegrityViolationException} : client, produit ou commande inexistant\\
+3819 / 4025 & Contrainte \texttt{CHECK} & \texttt{IntegrityViolationException} : prix, stock ou quantit\'e invalide\\
+--- & Stock insuffisant & \texttt{InsufficientStockException} (lev\'ee par le code)\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\chapter{\'Etape 5 --- Couche web}
+% =============================================================================
+\section{Architecture}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\small, node distance=1.0cm and 1.5cm,
+    box/.style={rectangle, rounded corners=4pt, draw=ink, thick, fill=white,
+                minimum width=2.7cm, minimum height=1.0cm, align=center},
+    ctl/.style={box, fill=teal!12}, view/.style={box, fill=saffron!18},
+    data/.style={box, fill=black!6},
+    flow/.style={-{Stealth[length=6pt]}, thick}
+]
+\node[box] (nav) {Navigateur};
+\node[ctl, right=of nav] (srv) {Servlet\\ (contr\^oleur)};
+\node[data, right=of srv] (dao) {DAO\\ (interface)};
+\node[data, right=of dao] (db) {MySQL};
+\node[view, below=of srv] (jsp) {JSP + JSTL\\ (vue)};
+\node[data, below=of dao] (ent) {Entit\'es\\ (JavaBeans)};
+\draw[flow] (nav) -- node[above, font=\footnotesize] {requ\^ete} (srv);
+\draw[flow] (srv) -- (dao);
+\draw[flow] (dao) -- (db);
+\draw[flow] (srv) -- node[left, font=\footnotesize] {forward} (jsp);
+\draw[flow] (dao) -- (ent);
+\draw[flow, dashed] (jsp.west) -| node[pos=0.25, above, font=\footnotesize] {HTML} (nav.south);
+\draw[flow, dashed] (ent.west) -- node[above, font=\footnotesize] {lues par} (jsp.east);
+\end{tikzpicture}
+\caption{Circulation d'une requ\^ete dans l'application}\label{fig:archi}
+\end{figure}
+
+Une requ\^ete arrive \`a un servlet, qui lit et valide les param\`etres, appelle l'interface DAO, place le r\'esultat dans la requ\^ete puis transmet (\texttt{forward}) \`a une JSP qui produit le HTML. Les JSP sont plac\'ees sous \texttt{WEB-INF/views} : elles ne sont pas accessibles directement depuis le navigateur, seul un servlet peut les afficher.
+
+\section{Servlets}
+\begin{table}[H]
+\centering
+\caption{Servlets et actions (la partie apr\`es le \texttt{/} d\'esigne l'action)}\label{tab:servlets}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{Servlet} & \textbf{Chemin} & \textbf{Actions}\\
+\midrule
+\texttt{HomeServlet} & \texttt{/home} & Tableau de bord : chiffres cl\'es, derni\`eres commandes, stock \`a surveiller\\
+\texttt{ClientServlet} & \texttt{/clients/*} & GET : liste, \texttt{new}, \texttt{edit}, \texttt{view} ; POST : enregistrer, \texttt{delete}\\
+\texttt{ProduitServlet} & \texttt{/produits/*} & GET : liste, \texttt{new}, \texttt{edit} ; POST : enregistrer, \texttt{delete}\\
+\texttt{CommandeServlet} & \texttt{/commandes/*} & GET : liste (filtre par statut), \texttt{new}, \texttt{edit}, \texttt{view} ; POST : cr\'eer, modifier, supprimer, changer le statut, ajouter / modifier / retirer une ligne\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Choix de conception c\^ot\'e web}
+\begin{itemize}
+  \item \textbf{Post/Redirect/Get} : tout POST r\'eussi se termine par une redirection. Si l'utilisateur rafra\^ichit la page, le navigateur rejoue seulement un GET et la commande n'est pas cr\'e\'ee deux fois. Le message de confirmation est conserv\'e dans la session pour une seule lecture (message \emph{flash}).
+  \item \textbf{Validation c\^ot\'e serveur} : e-mail, t\'el\'ephone, prix (deux d\'ecimales au plus), stock, quantit\'es. En cas d'erreur, le formulaire est r\'eaffich\'e avec les valeurs saisies et un message par champ (figure~\ref{fig:clientform}).
+  \item \textbf{Protection CSRF} : un filtre g\'en\`ere un jeton par session et refuse (erreur 403) tout POST qui ne le renvoie pas. Un site tiers ne peut pas lire ce jeton, donc ne peut pas faire supprimer une commande \`a la place de l'utilisateur.
+  \item \textbf{Protection XSS} : toutes les valeurs affich\'ees passent par \texttt{<c:out>}, qui \'echappe le HTML. Un client nomm\'e \texttt{<script>} s'affiche comme du texte.
+  \item \textbf{Encodage UTF-8} appliqu\'e par le filtre, pour que les accents survivent de la saisie \`a la base et au retour.
+  \item \textbf{En-t\^etes de s\'ecurit\'e} (\texttt{X-Frame-Options}, \texttt{X-Content-Type-Options}) et cookie de session \texttt{HttpOnly}.
+\end{itemize}
+
+\begin{lstlisting}[language=Java,caption={Principe de la v\'erification du jeton CSRF (\texttt{RequestFilter})},label={lst:csrf}]
+if ("POST".equals(req.getMethod())) {
+    String expected = (String) session.getAttribute("csrfToken");
+    String received = req.getParameter("_csrf");
+    boolean valid = expected != null && received != null
+            && MessageDigest.isEqual(expected.getBytes(UTF_8), received.getBytes(UTF_8));
+    if (!valid) {
+        resp.sendError(HttpServletResponse.SC_FORBIDDEN);   // 403
+        return;
+    }
+}
+\end{lstlisting}
+
+La comparaison utilise \texttt{MessageDigest.isEqual}, dont la dur\'ee ne d\'epend pas de l'endroit o\`u les deux cha\^ines diff\`erent, ce qui \'evite de r\'ev\'eler le jeton par mesure de temps.
+
+\section{Pages JSP et JSTL}
+Conform\'ement \`a la consigne, les pages utilisent exclusivement JSTL et le langage d'expression : \texttt{c:forEach}, \texttt{c:if}, \texttt{c:choose}, \texttt{c:out} et \texttt{fmt}. Le fichier \texttt{web.xml} d\'eclare \texttt{scripting-invalid}, ce qui fait \'echouer toute page contenant un scriptlet. Le code r\'ep\'etitif est factoris\'e en \emph{tag files} dans \texttt{WEB-INF/tags} :
+
+\begin{itemize}
+  \item \texttt{layout.tag} : gabarit commun (menu, message flash, pied de page) ;
+  \item \texttt{money.tag} : montant avec deux d\'ecimales et la devise \og MAD \fg{} ;
+  \item \texttt{statut.tag} : statut d'une commande avec sa couleur ;
+  \item \texttt{csrf.tag} : champ cach\'e du jeton, plac\'e dans chaque formulaire.
+\end{itemize}
+
+\section{Interface}
+L'interface n'utilise aucune biblioth\`eque externe : un seul fichier CSS et un petit script JavaScript facultatif (confirmations, ajout de lignes). Toutes les pages fonctionnent sans JavaScript. Le menu est lat\'eral sur ordinateur et passe en barre sup\'erieure sur t\'el\'ephone. Le statut d'une commande est indiqu\'e par un point de couleur suivi du libell\'e, et la page d'une commande affiche une frise d'avancement en trois \'etapes.
+
+\subsection{Tableau de bord}
+\fig{11-accueil}{Tableau de bord}{fig:accueil}
+
+\subsection{Espace client}
+\fig{12-clients-liste}{Liste des clients}{fig:clients}
+\fig{13-client-form}{Formulaire client avec erreur de validation}{fig:clientform}
+
+\subsection{Espace produit}
+\fig{14-produits-liste}{Liste des produits, avec indication de rupture ou de stock bas}{fig:produits}
+\fig{15-produit-form}{Formulaire produit}{fig:produitform}
+
+\subsection{Espace commande}
+\fig{16-commandes-liste}{Liste des commandes avec filtre par statut}{fig:commandes}
+\fig{17-commande-new}{Cr\'eation d'une commande avec plusieurs lignes}{fig:cmdnew}
+\fig{18-commande-attente}{Commande en attente : lignes modifiables}{fig:cmdattente}
+\fig{19-commande-validee}{Commande valid\'ee : lignes verrouill\'ees, exp\'edition possible}{fig:cmdvalidee}
+\fig{21-annulee}{Commande annul\'ee}{fig:cmdannulee}
+
+\subsection{Gestion des erreurs et mobile}
+\fig{20-stock-insuffisant}{Message affich\'e lorsque la quantit\'e d\'epasse le stock}{fig:stockerr}
+\fig{22-erreur-404}{Page d'erreur pour une adresse ou un enregistrement inexistant}{fig:err404}
+\fig[0.38]{23-mobile}{Page d'une commande sur t\'el\'ephone (largeur 390\,px)}{fig:mobile}
+
+% =============================================================================
+\chapter{Validation}\label{chap:tests}
+% =============================================================================
+\section{Strat\'egie}
+La validation a \'et\'e men\'ee par sc\'enarios sur l'application d\'eploy\'ee, avec des cas nominaux et des cas limites. Chaque r\`egle m\'etier du chapitre~2 a \'et\'e v\'erifi\'ee au moins une fois (tableau~\ref{tab:scenarios}).
+
+\begin{table}[H]
+\centering
+\caption{Sc\'enarios de validation}\label{tab:scenarios}
+\begin{tabularx}{\textwidth}{@{}lXl@{}}
+\toprule
+\textbf{R\`egle} & \textbf{Sc\'enario} & \textbf{Preuve}\\
+\midrule
+Stock r\'eserv\'e & Cr\'eer une commande de 2 unit\'es : le stock baisse de 2 & Fig.~\ref{fig:avant}--\ref{fig:apres}\\
+Stock restitu\'e & Annuler cette commande : le stock revient \`a sa valeur & Fig.~\ref{fig:annul}\\
+Stock insuffisant & Commander plus que le stock disponible : refus avec message & Fig.~\ref{fig:stockerr}\\
+Validation des saisies & E-mail invalide : message sous le champ & Fig.~\ref{fig:clientform}\\
+Contrainte en base & Stock n\'egatif refus\'e par \texttt{CHECK} & Fig.~\ref{fig:check}\\
+Lignes verrouill\'ees & Commande valid\'ee : plus de modification de ligne & Fig.~\ref{fig:cmdvalidee}\\
+Adresse inexistante & Page d'erreur propre, sans trace Java & Fig.~\ref{fig:err404}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Preuve de la gestion du stock}
+\fig[0.8]{24-stock-avant}{Stock avant la commande}{fig:avant}
+\fig[0.8]{25-stock-apres}{Stock apr\`es une commande de deux unit\'es}{fig:apres}
+\fig[0.8]{26-stock-annulation}{Stock apr\`es annulation de la commande}{fig:annul}
+
+\section{D\'emarrage et d\'eploiement}
+Le d\'emarrage du serveur confirme que Weld est actif : la ligne \texttt{WELD-ENV-001100} indique que l'injection CDI est disponible dans les servlets et filtres (figure~\ref{fig:console}).
+
+\fig{05-tomcat-server}{Serveur Tomcat d\'emarr\'e dans Eclipse}{fig:server}
+\fig{06-tomcat-console}{Console au d\'emarrage : initialisation de Weld puis d\'emarrage du serveur}{fig:console}
+
+\paragraph{Incidents rencontr\'es.}
+Trois probl\`emes de configuration ont \'et\'e r\'esolus pendant le d\'eploiement. Le port 8080 \'etait occup\'e par un service syst\`eme Windows : Tomcat a \'et\'e d\'eplac\'e sur le port 8081. L'application r\'epondait ensuite par une erreur 404 : Eclipse servait une ancienne copie du projet ; un rafra\^ichissement, un \emph{Maven Update Project} puis un nettoyage du serveur ont publi\'e les nouveaux fichiers. Enfin, le validateur JSP d'Eclipse refusait l'entit\'e \texttt{\&nbsp;} dans un fichier de balise : elle a \'et\'e remplac\'ee par \texttt{\&\#160;}.
+
+% =============================================================================
+\chapter{Gestion du code avec Git et GitHub}\label{chap:git}
+% =============================================================================
+Le code est versionn\'e dans un d\'ep\^ot GitHub (\url{\depot}). Les messages de commit suivent la convention \emph{Conventional Commits} (\texttt{feat}, \texttt{fix}, \texttt{docs}, \texttt{style}, \texttt{chore}), ce qui rend l'historique lisible : on voit d'un coup d'\oe il ce qu'apporte chaque \'etape.
+
+Le fichier \texttt{.gitignore} exclut les fichiers g\'en\'er\'es (\texttt{target/}, fichiers Eclipse) et surtout \texttt{db.properties}, qui contient le mot de passe de la base. Un mod\`ele \texttt{db.properties.example} est fourni \`a la place.
+
+\fig{27-git-log}{Historique des commits}{fig:gitlog}
+\fig{28-git-push}{Envoi des commits vers GitHub}{fig:gitpush}
+\fig{29-github-repo}{Page du d\'ep\^ot GitHub}{fig:github}
+\fig{30-github-commits}{Liste des commits sur GitHub}{fig:githubcommits}
+
+% =============================================================================
+\chapter{Limites et perspectives}
+% =============================================================================
+Plusieurs choix ont \'et\'e faits pour rester dans le p\'erim\`etre de l'atelier. Ils m\'eritent d'\^etre signal\'es.
+
+\begin{itemize}
+  \item \textbf{Pas de pool de connexions} : chaque op\'eration ouvre une connexion via \texttt{DriverManager}. C'est suffisant pour un usage p\'edagogique ; en production, un \texttt{DataSource} avec pool (HikariCP, pool de Tomcat) serait n\'ecessaire.
+  \item \textbf{Pas d'authentification} : tout utilisateur voit toutes les donn\'ees. Le jeton CSRF est rattach\'e \`a la session, pas \`a un compte.
+  \item \textbf{Modification d'un produit} : l'\'edition d'un produit \'ecrase le stock avec la valeur saisie. Si une commande passe pendant l'\'edition, sa r\'eservation de stock est perdue. Une correction possible est de modifier le stock par des mouvements (entr\'ee, sortie) plut\^ot que par remplacement.
+  \item \textbf{Pas de pagination} : les listes affichent tous les enregistrements.
+  \item \textbf{Pas de tests automatis\'es dans le d\'ep\^ot} : la validation du chapitre~\ref{chap:tests} est manuelle. Des tests JUnit sur les DAO avec une base de test seraient la suite naturelle.
+  \item \textbf{Une seule devise} (MAD) et pas de gestion de TVA ou de remises.
+\end{itemize}
+
+% =============================================================================
+\chapter*{Conclusion}
+\addcontentsline{toc}{chapter}{Conclusion}
+% =============================================================================
+L'atelier a permis de construire de bout en bout une application JEE : du diagramme de classes \`a une interface fonctionnelle d\'eploy\'ee sur Tomcat. Les principales difficult\'es n'\'etaient pas dans le CRUD, mais dans la coh\'erence des donn\'ees : r\'eserver le stock sans jamais le rendre n\'egatif, figer les prix, imposer un cycle de vie aux commandes. La r\'eponse retenue est de placer chaque r\`egle l\`a o\`u elle peut \^etre garantie, c'est-\`a-dire dans la base pour les invariants (contraintes, mise \`a jour conditionnelle du stock), dans les transactions pour les op\'erations compos\'ees et dans les \'enum\'erations pour les r\`egles m\'etier.
+
+La s\'eparation en couches (entit\'es, interfaces, DAO, servlets, JSP) rend le code lisible et pr\^et \`a \'evoluer vers un framework comme Spring ou Jakarta EE, dont les concepts (injection, contr\^oleurs, vues) ont ici \'et\'e manipul\'es \`a la main.
+
+% =============================================================================
+\begin{thebibliography}{9}
+\bibitem{sujet} Pr.\ L.\ Elaachak, \emph{Application web bas\'ee sur MVC et Standards JEE}, sujet d'atelier, FST Tanger, cycle LSI.
+\bibitem{dzone} DZone, \emph{Tutorial covering JSP 2.2 and JSTL}, \url{https://dzone.com/articles/tutorial-covering-jsp-22-and}.
+\bibitem{tomcat} Apache Software Foundation, \emph{Apache Tomcat 9 Documentation}, \url{https://tomcat.apache.org/tomcat-9.0-doc/}.
+\bibitem{weld} JBoss, \emph{Weld Reference Documentation : Servlet containers}, \url{https://weld.cdi-spec.org/documentation/}.
+\bibitem{owasp} OWASP, \emph{Cross-Site Request Forgery Prevention Cheat Sheet}, \url{https://cheatsheetseries.owasp.org/}.
+\bibitem{mysql} Oracle, \emph{MySQL 8.0 Reference Manual : CHECK constraints}, \url{https://dev.mysql.com/doc/refman/8.0/en/create-table-check-constraints.html}.
+\end{thebibliography}
+
+% =============================================================================
+\appendix
+\chapter{Structure du d\'ep\^ot}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize,numbers=none,xleftmargin=0pt,framexleftmargin=0pt,caption={Arborescence principale}]
+gestion-commandes/
+  db/schema.sql                    schema MySQL + donnees d'exemple
+  docs/class-diagram.{md,tex}      diagramme de classes (Mermaid, TikZ)
+  src/main/java/ma/fstt/
+    entities/                      Client, Produit, Commande, LigneDeCommande, StatutCommande
+    service/                       IDao, IClientDao, ... et exceptions
+    dao/                           implementations JDBC, DBConnection, Jdbc
+    web/                           servlets, RequestFilter, Flash, Web
+  src/main/resources/              db.properties.example
+  src/main/webapp/
+    WEB-INF/{web.xml,beans.xml,tags/,views/}
+    assets/{css,js}
+  pom.xml
+  README.md
+\end{lstlisting}
+
+\end{document}
