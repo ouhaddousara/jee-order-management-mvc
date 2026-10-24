@@ -114,3 +114,8 @@ Application disponible sur `http://localhost:8080/gestion-commandes/` (adapter l
 ## Convention de commits
 
 [Conventional Commits](https://www.conventionalcommits.org/) : `feat`, `fix`, `style`, `docs`, `chore`.
+
+## Rapport
+
+Le rapport de l'atelier est disponible dans [eport/rapport-jee-gestion-commandes.pdf](report/rapport-jee-gestion-commandes.pdf) (sources LaTeX : eport/main.tex).
+
