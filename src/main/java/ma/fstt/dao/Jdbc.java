@@ -101,9 +101,22 @@ final class Jdbc {
             ps.setLong(2, produitId);
             ps.setInt(3, delta);
             if (ps.executeUpdate() == 0) {
-                throw new InsufficientStockException("Stock insuffisant pour le produit n° " + produitId);
+                throw new InsufficientStockException(describeShortage(c, produitId));
             }
         }
+    }
+
+    /** Builds a user-facing message naming the product and the stock really available. */
+    private static String describeShortage(Connection c, long produitId) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement("SELECT designation, stock FROM produit WHERE id = ?")) {
+            ps.setLong(1, produitId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return "Stock insuffisant pour « " + rs.getString(1) + " » (disponible : " + rs.getInt(2) + ").";
+                }
+            }
+        }
+        return "Stock insuffisant pour le produit n° " + produitId + ".";
     }
 
     /** Maps a MySQL/MariaDB error to a message that can be shown to the user. */
