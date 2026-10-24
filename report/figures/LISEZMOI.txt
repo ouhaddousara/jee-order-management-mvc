@@ -1,2 +1,0 @@
-Place the 30 PNG screenshots here (01-versions.png ... 30-github-commits.png).
-A missing screenshot does not break the compilation: it is replaced by an empty frame.
